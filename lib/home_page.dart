@@ -17,10 +17,6 @@ class _HomePageState extends State<HomePage> {
   final RoundedLoadingButtonController _btnController =
       RoundedLoadingButtonController();
 
-  void _doSomething() async {
-    _btnController.success();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,11 +30,10 @@ class _HomePageState extends State<HomePage> {
             RoundedLoadingButton(
               controller: _btnController,
               onPressed: () async {
-                await signInAnonymously();
+                await signInAnonymously(context);
                 if (!mounted) return;
                 Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (_) => UserProfile()));
-                    
               },
               child:
                   const Text('Tap me!', style: TextStyle(color: Colors.white)),
@@ -47,20 +42,14 @@ class _HomePageState extends State<HomePage> {
                 onPressed: (isLoading == true)
                     ? null
                     : () async {
-                        setState(() {
-                          isLoading == true;
-                        });
-
                         if (isLoading == false) {
-                          await signInAnonymously();
+                          // isLoading == true;
+                          await signInAnonymously(context);
                           if (!mounted) return;
                           Navigator.of(context).pushReplacement(
                               MaterialPageRoute(builder: (_) => UserProfile()));
                         }
-
-                        setState(() {
-                          isLoading == false;
-                        });
+                        // isLoading == false;
                       },
                 child: const Text("Anonymous Auth.")),
             ElevatedButton(
@@ -70,7 +59,28 @@ class _HomePageState extends State<HomePage> {
                   Navigator.of(context).pushReplacement(
                       MaterialPageRoute(builder: (_) => UserProfile()));
                 },
-                child: const Text("Google Auth."))
+                child: const Text("Google Auth.")),
+            ElevatedButton(
+                onPressed: () async {
+                  signInWithEmailAndPassword(
+                      "a.emad@outlook.com", "123456", context);
+
+                  // UserCredential? userCredential = await createUserWithEmailAndPassword("a.emad@outlook.com" , "123456",context);
+                  // if (userCredential != null) {
+                  //   // ignore: use_build_context_synchronously
+                  //   signInWithEmailAndPassword("a.emad@outlook.com" , "123456",context);
+                  // }
+
+                  if (!mounted || userCredential == null) return;
+                  Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => UserProfile()));
+                },
+                child: const Text("Email/Password Auth.")),
+            ElevatedButton(
+                onPressed: () {
+                  verifyPhoneNumber();
+                },
+                child: Text("Phone"))
           ],
         ),
       ),
@@ -78,21 +88,17 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-Future<UserCredential?> signInAnonymously() async {
+Future<UserCredential?> signInAnonymously(BuildContext context) async {
   UserCredential? userCredential;
   try {
     userCredential = await FirebaseAuth.instance.signInAnonymously();
-    print("Signed in with temporary account.");
     return userCredential;
-  } on FirebaseAuthException catch (e) {
-    switch (e.code) {
-      case "operation-not-allowed":
-        print("Anonymous auth hasn't been enabled for this project.");
-        return userCredential;
-      default:
-        print("Unknown error.");
-        return userCredential;
-    }
+  } catch (e) {
+    SnackBar snackBar = SnackBar(
+      content: Text(e.toString()),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }
 
@@ -112,12 +118,53 @@ Future<UserCredential?> signInWithGoogle(BuildContext context) async {
 
   try {
     return await FirebaseAuth.instance.signInWithCredential(credential);
-  } catch (e) {
-    const snackBar = SnackBar(
-      content: Text('The user account has been disabled by an administrator.!'),
+  } on FirebaseAuthException catch (e) {
+    SnackBar snackBar = SnackBar(
+      content: Text(e.code.toString()),
     );
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   // Once signed in, return the UserCredential
+}
+
+Future<UserCredential?> createUserWithEmailAndPassword(
+    String emailAddress, String password, BuildContext context) async {
+  try {
+    final credential =
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: emailAddress,
+      password: password,
+    );
+    return credential;
+  } on FirebaseAuthException catch (e) {
+    SnackBar snackBar = SnackBar(
+      content: Text(e.code.toString()),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+}
+
+Future<UserCredential?> signInWithEmailAndPassword(
+    String emailAddress, String password, BuildContext context) async {
+  try {
+    final credential = await FirebaseAuth.instance
+        .signInWithEmailAndPassword(email: emailAddress, password: password);
+    return credential;
+  } on FirebaseAuthException catch (e) {
+    SnackBar snackBar = SnackBar(
+      content: Text(e.code.toString()),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+}
+
+void verifyPhoneNumber() async {
+  await FirebaseAuth.instance.verifyPhoneNumber(
+    phoneNumber: '+201111146515',
+    verificationCompleted: (PhoneAuthCredential credential) {},
+    verificationFailed: (FirebaseAuthException e) {},
+    codeSent: (String verificationId, int? resendToken) {},
+    codeAutoRetrievalTimeout: (String verificationId) {},
+  );
 }

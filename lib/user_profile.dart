@@ -33,6 +33,7 @@ class _UserProfileState extends State<UserProfile> {
                       MaterialPageRoute(builder: ((context) => HomePage())));
                 },
                 child: const Text("Sign Out")),
+            permmantentAccount(user!),
           ],
         ),
       ),
@@ -40,34 +41,15 @@ class _UserProfileState extends State<UserProfile> {
   }
 }
 
-// Widget permmantentAccount(User user) {
-//   if (user!.isAnonymous == true) {
-//     return ElevatedButton(
-//         onPressed: () async {
-
-//           final credential = GoogleAuthProvider.credential(idToken: idToken);
-
-//           GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-//           GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
-
-//           User? user = FirebaseAuth.instance.currentUser;
-
-//           // Check if the user has signed in as anonymous
-//           if (user != null) {
-//             // Use the provider auth token to link the anonymous account
-//             await FirebaseAuth.instance.currentUser?.linkWithCredential();
-//           } else if (user == null || user.email == null) {
-//             user = await _auth.signInWithGoogle(
-//               accessToken: googleAuth.accessToken,
-//               idToken: googleAuth.idToken,
-//             );
-// }
-//         },
-//         child: const Text("Convert to a permanent account"));
-//   } else {
-//     return const Text("");
-//   }
-// }
+Widget permmantentAccount(User user) {
+  if (user.isAnonymous == true) {
+    return ElevatedButton(
+        onPressed: () async {},
+        child: const Text("Convert to a permanent account"));
+  } else {
+    return const Text("");
+  }
+}
 
 Future<UserCredential> signInWithGoogle() async {
   // Trigger the authentication flow
